@@ -1,0 +1,13 @@
+click==8.1.7
+langchain==0.1.13
+faiss-cpu==1.10.0
+sentence-transformers==2.2.2
+openai==1.3.6
+pyyaml==6.0.2
+sqlalchemy==2.0.39
+aiohttp==3.11.13
+dataclasses-json==0.6.7
+jsonpatch==1.33
+langchain-community==0.0.38
+langchain-core==0.1.52
+langsmith==0.1.17
