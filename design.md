@@ -29,19 +29,8 @@ flowchart TD
 ### 4.1 Knowledge Guidance System
 
 - **Codebase Guidelines** (structured YAML)
+  The Guidelines are the prompt to instruct LLM to how to search.
 
-```yaml
-paths:
-  winforms:
-    - navigator/std/Data/config/xmlform
-    priority: 1
-    patterns: ["*.xml", "*.config"]
-  wcf:
-    - navigator/Source/Service
-    file_ext: [".cs", ".svc"]
-conventions:
-  - "Configuration files use App.config naming pattern"
-```
 
 ### 4.2 Search Orchestrator
 
