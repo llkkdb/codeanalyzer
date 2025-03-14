@@ -2,15 +2,16 @@ import os
 import re
 import subprocess
 import uuid
+import json
 from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Optional, Set, Tuple
 import click
-from langchain.vectorstores import FAISS
-from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.schema import Document
-from langchain.prompts import ChatPromptTemplate
-from langchain.chat_models import ChatOpenAI
+from langchain_community.vectorstores import Chroma
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_core.documents import Document
+from langchain_core.prompts.chat import ChatPromptTemplate
+from langchain_community.chat_models import ChatOpenAI
 
 # Security configuration
 ALLOWED_COMMANDS = {
@@ -40,7 +41,7 @@ class CommandOutputParser:
                 continue
             
             if parser:
-                match = parser.match(line)
+                match = parser.match(line) if isinstance(parser, re.Pattern) else parser(line)
                 if match:
                     path_str = match.group(1) if isinstance(parser, re.Pattern) else line
             else:  # Fallback for unknown commands
@@ -108,10 +109,12 @@ class CodeSession:
     def __init__(self, session_id: str):
         self.session_id = session_id
         self.created_at = datetime.now()
-        self.vector_store: Optional[FAISS] = None
+        self.vector_store = None
         self.context_files: Set[Path] = set()
         self.search_history: List[Dict] = []
         self.embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+        self.persist_directory = Path(f"chroma_sessions/{session_id}")
+        self.persist_directory.mkdir(parents=True, exist_ok=True)
 
     def add_files(self, paths: List[Path], chunk_size: int = 1000):
         """Add files to session context with chunking"""
@@ -136,9 +139,17 @@ class CodeSession:
 
         if docs:
             if self.vector_store:
+                # With Chroma, we add documents to the existing collection
                 self.vector_store.add_documents(docs)
             else:
-                self.vector_store = FAISS.from_documents(docs, self.embeddings)
+                # Initialize Chroma with the documents
+                self.vector_store = Chroma.from_documents(
+                    docs, 
+                    self.embeddings,
+                    persist_directory=str(self.persist_directory)
+                )
+                # Persist the collection after creation
+                self.vector_store.persist()
 
     def query_context(self, question: str, k: int = 5) -> str:
         """Query session-specific context"""
@@ -181,14 +192,43 @@ class SessionManager:
         session_dir.mkdir(exist_ok=True)
         
         if session.vector_store:
-            session.vector_store.save_local(str(session_dir / "faiss_index"))
+            # Chroma already persists to the specified directory
+            session.vector_store.persist()
         
         meta = {
             "created_at": session.created_at.isoformat(),
             "context_files": [str(p) for p in session.context_files],
-            "search_history": session.search_history
+            "search_history": session.search_history,
+            "chroma_directory": str(session.persist_directory)
         }
         (session_dir / "meta.json").write_text(json.dumps(meta))
+
+    def load_session(self, session_id: str) -> Optional[CodeSession]:
+        """Load a previously persisted session"""
+        session_dir = self.storage_dir / session_id
+        if not session_dir.exists() or not (session_dir / "meta.json").exists():
+            return None
+            
+        try:
+            meta = json.loads((session_dir / "meta.json").read_text())
+            session = CodeSession(session_id)
+            session.created_at = datetime.fromisoformat(meta["created_at"])
+            session.context_files = set(Path(p) for p in meta["context_files"])
+            session.search_history = meta["search_history"]
+            
+            # Load the Chroma DB if it exists
+            chroma_dir = Path(meta.get("chroma_directory", f"chroma_sessions/{session_id}"))
+            if chroma_dir.exists():
+                session.vector_store = Chroma(
+                    persist_directory=str(chroma_dir),
+                    embedding_function=session.embeddings
+                )
+                
+            self.sessions[session_id] = session
+            return session
+        except Exception as e:
+            print(f"Error loading session {session_id}: {e}")
+            return None
 
 class CodeUnderstandingSystem:
     def __init__(self):
@@ -254,6 +294,9 @@ def ask(system: CodeUnderstandingSystem, query: str):
     ])
     answer = (prompt | system.llm).invoke({"query": query}).content
     click.echo(f"\nAnswer:\n{answer}")
+    
+    # Persist session after use
+    system.session_manager.persist_session(session)
 
 @cli.group()
 def session():
@@ -276,7 +319,13 @@ def switch_session(system: CodeUnderstandingSystem, session_id: str):
     if system.session_manager.switch_session(session_id):
         click.echo(f"Switched to session: {session_id}")
     else:
-        click.echo(f"Session {session_id} not found!")
+        # Try to load from disk
+        session = system.session_manager.load_session(session_id)
+        if session:
+            system.session_manager.active_session = session
+            click.echo(f"Loaded and switched to session: {session_id}")
+        else:
+            click.echo(f"Session {session_id} not found!")
 
 @session.command(name="list")
 @click.pass_obj
@@ -284,8 +333,18 @@ def list_sessions(system: CodeUnderstandingSystem):
     """List all sessions"""
     click.echo("Active sessions:")
     for session_id in system.session_manager.sessions:
-        active = system.session_manager.active_session.session_id == session_id
+        active = system.session_manager.active_session and system.session_manager.active_session.session_id == session_id
         click.echo(f" {'*' if active else ' '} {session_id}")
+    
+    # Also check disk for persisted sessions
+    if system.session_manager.storage_dir.exists():
+        persisted = [d.name for d in system.session_manager.storage_dir.iterdir() 
+                    if d.is_dir() and (d / "meta.json").exists()]
+        if persisted:
+            click.echo("\nPersisted sessions (not loaded):")
+            for session_id in persisted:
+                if session_id not in system.session_manager.sessions:
+                    click.echo(f"   {session_id}")
 
 if __name__ == "__main__":
     cli()
