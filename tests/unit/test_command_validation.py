@@ -20,7 +20,8 @@ def test_invalid_flag(executor):
     assert "Disallowed flag" in msg
 
 def test_max_depth_violation(executor):
-    cmd = "find / -name *.cs"  # Exceeds max depth
+    # Test with valid path but exceeded maxdepth
+    cmd = "find . -name *.cs -maxdepth 5"
     valid, msg = executor.validate_command(cmd)
     assert not valid
-    assert "Path depth exceeded" in msg
+    assert "Max depth exceeds 3" in msg

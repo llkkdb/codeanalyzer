@@ -15,7 +15,7 @@ from langchain_community.chat_models import ChatOpenAI
 
 # Security configuration
 ALLOWED_COMMANDS = {
-    "find": {"flags": ["-name", "-type", "-path", "-exec"], "max_depth": 3},
+    "find": {"flags": ["-name", "-type", "-path", "-exec", "-maxdepth"], "max_depth": 3},
     "grep": {"flags": ["-r", "-i", "-l", "-H", "-n"], "max_depth": None},
     "rg": {"flags": ["--files", "-g", "-l"], "max_depth": 3}
 }
@@ -69,15 +69,40 @@ class SafeCommandExecutor:
         cmd = parts[0]
         if cmd not in self.allow_list:
             return False, f"Command {cmd} not allowed"
-        
+
         # Check flags
         allowed_flags = self.allow_list[cmd]["flags"]
         for part in parts[1:]:
-            if part.startswith("-") and part not in allowed_flags:
-                return False, f"Disallowed flag {part} for {cmd}"
-        
-        # Check path depth
-        if self.allow_list[cmd].get("max_depth"):
+            if part.startswith("-"):
+                # Handle grep combined flags differently
+                if cmd == "grep":
+                    # Split combined flags like -Hn into [-H, -n]
+                    flags = [f"-{char}" for char in part[1:]]
+                    for flag in flags:
+                        if flag not in allowed_flags:
+                            return False, f"Disallowed flag {flag} for {cmd}"
+                elif part not in allowed_flags:
+                    return False, f"Disallowed flag {part} for {cmd}"
+
+        # Enhanced path validation
+        if cmd == "find":
+            # Check for root path usage
+            if any(re.search(r'^/', p) for p in parts if not p.startswith("-")):
+                return False, "Find command cannot search from root directory"
+            
+            # Verify maxdepth parameter
+            max_depth = self.allow_list[cmd]["max_depth"]
+            if "-maxdepth" in parts:
+                idx = parts.index("-maxdepth") + 1
+                if idx < len(parts) and not parts[idx].isdigit():
+                    return False, "Invalid maxdepth value"
+                if int(parts[idx]) > max_depth:
+                    return False, f"Max depth exceeds {max_depth}"
+            else:
+                return False, "Find requires -maxdepth parameter"
+
+        # General path depth check for other commands
+        elif self.allow_list[cmd].get("max_depth"):
             path_parts = [p for p in parts if not p.startswith("-")]
             if len(path_parts) > self.allow_list[cmd]["max_depth"]:
                 return False, f"Path depth exceeded for {cmd}"
@@ -206,10 +231,13 @@ class SessionManager:
     def load_session(self, session_id: str) -> Optional[CodeSession]:
         """Load a previously persisted session"""
         session_dir = self.storage_dir / session_id
-        if not session_dir.exists() or not (session_dir / "meta.json").exists():
+        if not session_dir.exists():
             return None
             
         try:
+            if not (session_dir / "meta.json").exists():
+                return None
+                
             meta = json.loads((session_dir / "meta.json").read_text())
             session = CodeSession(session_id)
             session.created_at = datetime.fromisoformat(meta["created_at"])
@@ -231,8 +259,8 @@ class SessionManager:
             return None
 
 class CodeUnderstandingSystem:
-    def __init__(self):
-        self.llm = ChatOpenAI(temperature=0.1)
+    def __init__(self, llm=None):
+        self.llm = llm if llm is not None else ChatOpenAI(temperature=0.1)
         self.command_executor = SafeCommandExecutor()
         self.session_manager = SessionManager()
         self.knowledge_guidelines = self._load_knowledge_guidelines()
