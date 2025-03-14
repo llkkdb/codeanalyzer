@@ -1,0 +1,12 @@
+<CalculationSteps>
+  <Step id="1">
+    <Name>Tax Calculation</Name>
+    <Formula>amount * 0.2</Formula>
+    <Description>Standard 20% tax rate</Description>
+  </Step>
+  <Step id="2">
+    <Name>Total Calculation</Name>  
+    <Formula>subtotal + tax</Formula>
+    <Description>Sum of subtotal and tax</Description>
+  </Step>
+</CalculationSteps>

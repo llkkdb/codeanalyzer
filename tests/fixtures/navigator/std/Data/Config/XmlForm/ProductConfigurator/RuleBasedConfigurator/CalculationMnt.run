@@ -1,0 +1,8 @@
+# Calculation Script
+subtotal = 100
+tax = subtotal * 0.2
+total = subtotal + tax
+
+print(f"Subtotal: {subtotal}")
+print(f"Tax: {tax}") 
+print(f"Total: {total}")
