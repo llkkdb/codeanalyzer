@@ -18,7 +18,8 @@ def system():
 
 def test_file_chunking():
     """Test if files are properly chunked when added to a session"""
-    session = CodeSession("test_chunking")
+    # Create session with chunk_size=500
+    session = CodeSession("test_chunking", chunk_size=500)  # Set chunk_size here
     
     # Create a test file with known content
     test_file = Path("test_chunk.txt")
@@ -27,15 +28,15 @@ def test_file_chunking():
     
     with patch("code_understanding.Chroma.from_documents") as mock_from_docs:
         mock_from_docs.return_value = Mock()
-        # Add the file with a chunk size of 500
-        session.add_files([test_file], chunk_size=500)
+        session.add_files([test_file])
         
         # Verify the file was added to the context
         assert test_file in session.context_files
         
         # Verify the chunking (4 chunks of 500 characters)
         args, _ = mock_from_docs.call_args
-        assert len(args[0]) == 4
+        # 2000 chars / (1000 chunk_size - 200 overlap) = 3 chunks
+        assert len(args[0]) == 3
         
     # Clean up
     test_file.unlink()

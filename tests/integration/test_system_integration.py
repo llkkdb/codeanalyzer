@@ -72,7 +72,9 @@ def test_file_processing(tmp_path):
         # Test file addition and chunking
         test_file = tmp_path / "test.txt"
         test_file.write_text("a" * 2500)  # 2500 character file
-        system.session_manager.active_session.add_files([test_file], chunk_size=1000)
+        # Create new session with chunk_size=1000
+        system.session_manager.create_session(chunk_size=1000)
+        system.session_manager.active_session.add_files([test_file])
         
         assert len(system.session_manager.active_session.context_files) == 1
         assert mock_store.call_count == 1
