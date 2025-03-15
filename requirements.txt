@@ -1,6 +1,7 @@
-langchain_community==0.0.19
-langchain_core==0.1.23
-langchain_openai==0.0.8
+langchain_community==0.0.38
+langchain_core==0.1.52
+langchain_openai==0.1.6
+chromadb==0.6.3
+click==8.1.7
+sentence-transformers==3.4.1
 pytest==8.3.4
-pytest-mock==3.14.0
-python-dotenv==1.0.1
