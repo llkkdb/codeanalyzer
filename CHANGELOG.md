@@ -59,15 +59,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Docker support with Dockerfile and docker-compose.yml
 - Security scanning with bandit and safety in CI pipeline
 - Better error messages with helpful hints and suggestions
-- **Comprehensive test suite with 120+ test cases**:
+- **Comprehensive test suite with 135+ test cases**:
   - CLI tests (20+ cases) - Command interface testing with CliRunner
   - Config tests (40+ cases) - Configuration management and logging
   - Parser tests (30+ cases) - Output parsing with unicode, Windows paths, edge cases
   - Exception tests (30+ cases) - Custom exception hierarchy and error handling
+  - Integration workflow tests (15+ cases) - End-to-end workflow testing
+- **Test infrastructure**:
+  - Pytest fixtures system (200+ lines) - Reusable test setup components
+  - Mock fixtures for LLM, embeddings, vector stores, and sessions
+  - Sample data fixtures for files, code structure, and command outputs
+  - Custom pytest markers (integration, unit, slow, requires_api)
 - **Comprehensive documentation**:
   - Architecture documentation (600+ lines) with ASCII diagrams and component details
   - Examples guide (500+ lines) with 6 real-world use cases
   - Troubleshooting guide (400+ lines) with common issues and solutions
+  - Deployment guide (640+ lines) covering all deployment scenarios
   - Docker usage documentation in README
 
 ### Changed
@@ -104,6 +111,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Architecture Guide** (`docs/architecture.md`): System overview, component architecture, data flow, security model, session lifecycle
 - **Examples Guide** (`docs/examples.md`): Getting started, 6 real-world use cases (onboarding, security audit, debugging, API docs, migration, code review)
 - **Troubleshooting Guide** (`docs/troubleshooting.md`): Installation issues, configuration problems, error messages, Docker issues, quick fixes
+- **Deployment Guide** (`docs/deployment.md`): Local development, Docker deployment (single, compose, production), cloud platforms (AWS, GCP, Azure, Kubernetes), production considerations (security, monitoring, backup), CI/CD integration, cost optimization
 
 ### Planned
 - Performance optimizations and caching
