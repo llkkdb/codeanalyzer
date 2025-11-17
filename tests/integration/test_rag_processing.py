@@ -1,16 +1,9 @@
 import pytest
-import sys
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-# Get the path to the root of the project
-project_root = Path(__file__).parent.parent.parent.absolute()
-
-# Add it to the Python path
-if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
-
-from code_understanding import CodeSession, CodeUnderstandingSystem
+from codeanalyzer import CodeUnderstandingSystem
+from codeanalyzer.core.session import CodeSession
 
 @pytest.fixture
 def system():
@@ -26,7 +19,7 @@ def test_file_chunking():
     content = "a" * 2000  # 2000 characters
     test_file.write_text(content)
     
-    with patch("code_understanding.Chroma.from_documents") as mock_from_docs:
+    with patch("codeanalyzer.core.session.Chroma.from_documents") as mock_from_docs:
         mock_from_docs.return_value = Mock()
         session.add_files([test_file])
         
@@ -63,7 +56,7 @@ def test_query_context(system):
         )
     ]
     
-    with patch("code_understanding.Chroma.from_documents") as mock_from_docs:
+    with patch("codeanalyzer.core.session.Chroma.from_documents") as mock_from_docs:
         mock_store = Mock()
         mock_store.similarity_search.return_value = mock_results
         mock_from_docs.return_value = mock_store

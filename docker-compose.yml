@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  codeanalyzer:
+    build: .
+    image: codeanalyzer:latest
+    container_name: codeanalyzer
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - CODEANALYZER_LOG_LEVEL=INFO
+    volumes:
+      # Mount your code to analyze
+      - ./:/code:ro
+      # Persistent sessions
+      - codeanalyzer-sessions:/app/sessions
+      # Persistent logs
+      - codeanalyzer-logs:/app/logs
+      # Config
+      - codeanalyzer-config:/app/config
+    stdin_open: true
+    tty: true
+
+volumes:
+  codeanalyzer-sessions:
+  codeanalyzer-logs:
+  codeanalyzer-config:

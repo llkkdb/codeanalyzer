@@ -1,16 +1,6 @@
-import sys
-import os
-from pathlib import Path
-
-# Get the path to the root of the project
-project_root = Path(__file__).parent.parent.parent.absolute()
-
-# Add it to the Python path
-if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
-
-# Now import works
-from code_understanding import CodeSession, CodeUnderstandingSystem
+import pytest
+from codeanalyzer import CodeUnderstandingSystem
+from codeanalyzer.core.session import CodeSession
 
 @pytest.fixture
 def system():

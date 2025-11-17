@@ -5,17 +5,20 @@ An intelligent code understanding system for exploring and analyzing codebases u
 ## Features
 
 - **Natural Language Code Search**: Ask questions about your codebase in plain English
-- **Context-Aware Responses**: Maintains session context for more relevant answers
-- **Safe Command Execution**: Secure execution of system commands with strict validation
-- **Session Management**: Create and switch between multiple isolated analysis sessions
-- **Persistent Knowledge**: Save and restore sessions for continued analysis
+- **Context-Aware Responses**: Maintains session context for more relevant answers using RAG
+- **Safe Command Execution**: Secure execution with shell injection protection and strict validation
+- **Session Management**: Create and switch between multiple isolated analysis sessions with persistence
+- **Modular Architecture**: Clean separation of concerns with well-organized modules
+- **Comprehensive Error Handling**: Custom exception classes for better error reporting
+- **Configurable**: File-based and environment variable configuration support
+- **Production-Ready Logging**: Rotating log files with configurable levels
 
 ## Installation
 
 ### Prerequisites
 
 - Python 3.9+
-- Git (for cloning the repository)
+- OpenAI API key (get one from [OpenAI](https://platform.openai.com/api-keys))
 
 ### Setup
 
@@ -31,76 +34,126 @@ An intelligent code understanding system for exploring and analyzing codebases u
    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
    ```
 
-3. Install the dependencies:
+3. Install the package:
    ```bash
-   pip install -r requirements.txt
+   pip install -e .
    ```
 
-## Requirements
+   Or install with development dependencies:
+   ```bash
+   pip install -e ".[dev]"
+   ```
 
-```
-# Core dependencies
-click==8.1.7
-langchain-core==0.1.52
-langchain-community==0.0.38
-langchain-openai==0.1.6
-chromadb>=0.4.18
-openai>=1.24.0
+### Docker Installation
 
-# Supporting libraries
-pyyaml==6.0.2
-sqlalchemy==2.0.39
-aiohttp==3.11.13
-sentence-transformers>=2.2.2
-```
+For containerized deployment, use the provided Docker setup:
+
+1. **Using Docker Compose (Recommended)**:
+   ```bash
+   # Build and run
+   docker-compose up -d
+
+   # Run a command
+   docker-compose run codeanalyzer ask "How does this work?"
+
+   # Stop
+   docker-compose down
+   ```
+
+2. **Using Docker directly**:
+   ```bash
+   # Build the image
+   docker build -t codeanalyzer:latest .
+
+   # Run with your code mounted
+   docker run -it --rm \
+     -e OPENAI_API_KEY='your-api-key' \
+     -v $(pwd):/code \
+     -v codeanalyzer-sessions:/app/sessions \
+     -v codeanalyzer-logs:/app/logs \
+     codeanalyzer:latest ask "What does this code do?"
+   ```
+
+3. **Interactive Docker session**:
+   ```bash
+   # Start an interactive session
+   docker run -it --rm \
+     -e OPENAI_API_KEY='your-api-key' \
+     -v $(pwd):/code \
+     -v codeanalyzer-sessions:/app/sessions \
+     codeanalyzer:latest /bin/bash
+
+   # Inside container, use codeanalyzer normally
+   codeanalyzer session new --name my-session
+   codeanalyzer ask "Explain this codebase"
+   ```
+
+**Docker Volumes**:
+- `/code` - Your code to analyze (mount your project here)
+- `/app/sessions` - Persistent session data
+- `/app/logs` - Application logs
+- `/app/config` - Configuration files
 
 ## Configuration
 
 1. Set up your OpenAI API key:
    ```bash
-   export OPENAI_API_KEY=your_api_key_here
+   export OPENAI_API_KEY='your-api-key-here'
    ```
 
-2. (Optional) Create a custom knowledge guidelines file:
+2. (Optional) Configure system settings:
    ```bash
-   echo "# Custom Knowledge Guidelines" > knowledge_guidelines.md
+   codeanalyzer config --list-exclude
+   codeanalyzer config --add-exclude .cache
+   codeanalyzer config --max-file-size 2097152  # 2MB
    ```
 
 ## Usage
 
-### Basic Commands
+### Creating a Session
 
-Start a new session:
 ```bash
-python code_understanding.py session new
+# Create a new session
+codeanalyzer session new --name my-project
+
+# Create with custom chunk size
+codeanalyzer session new --name my-project --chunk-size 1500
 ```
 
-Ask a question about your code:
+### Asking Questions
+
 ```bash
-python code_understanding.py ask "How does the error handling work in this codebase?"
+# Ask a question about your codebase
+codeanalyzer ask "How does authentication work in this project?"
+
+# Retrieve more context documents
+codeanalyzer ask "Where are API endpoints defined?" --k 10
 ```
 
-List all sessions:
-```bash
-python code_understanding.py session list
-```
+### Managing Sessions
 
-Switch to an existing session:
 ```bash
-python code_understanding.py session switch session_id
+# List all sessions
+codeanalyzer session list
+
+# Switch to a different session
+codeanalyzer session switch my-other-project
+
+# Clean up old sessions (>30 days)
+codeanalyzer session clean
 ```
 
 ### Example Workflow
 
 ```bash
 # Create a new session
-python code_understanding.py session new --name my_analysis
+codeanalyzer session new --name my_analysis
 
 # Ask a question about the code
-python code_understanding.py ask "Find all functions related to validation"
+codeanalyzer ask "Find all functions related to validation"
 
 # Ask a follow-up question (maintains context)
-python code_understanding.py ask "How are these validation functions tested?"
+codeanalyzer ask "How are these validation functions tested?"
 ```
 
 ## How It Works
@@ -111,40 +164,108 @@ python code_understanding.py ask "How are these validation functions tested?"
 4. **Knowledge Extraction**: Retrieves relevant code snippets from the vector store
 5. **Response Generation**: Uses LLMs to generate answers based on the code context
 
+## Architecture
+
+CodeAnalyzer is organized into modular components:
+
+```
+codeanalyzer/
+├── core/           # Command execution and parsing
+│   ├── parser.py   # Output parsing
+│   ├── executor.py # Safe command execution
+│   └── session.py  # Session management
+├── storage/        # Persistence layer
+│   └── manager.py  # Session storage
+├── llm/            # LLM integration
+│   └── system.py   # Code understanding system
+├── config.py       # Configuration management
+├── exceptions.py   # Custom exceptions
+└── cli.py          # Command-line interface
+```
+
 ## Security Features
 
-- Allowlist-based command validation
-- Strict flag validation for system commands 
-- Path depth restrictions
-- Timeout limits for command execution
-- Secure parsing of command outputs
+- **Command Allowlist**: Only `find`, `grep`, and `rg` commands permitted
+- **Flag Validation**: Strict validation of command flags
+- **Path Restrictions**: Prevents searching sensitive directories
+- **Shell Injection Protection**: Uses `shlex.split()` and `shell=False`
+- **Size Limits**: Files >1MB excluded by default
+- **Timeout Protection**: 10-second default timeout for commands
+- **Environment Validation**: Checks for required API keys at startup
 
 ## Development
+
+### Setting Up Development Environment
+
+```bash
+# Install with development dependencies
+pip install -e ".[dev]"
+
+# Install pre-commit hooks
+pre-commit install
+```
 
 ### Running Tests
 
 ```bash
-PYTHONPATH=/path/to/codeanalyzer pytest tests/
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=codeanalyzer --cov-report=html
+
+# Run specific test categories
+pytest -m unit
+pytest -m integration
 ```
 
-### Project Structure
+### Code Quality
 
-```
-codeanalyzer/
-├── code_understanding.py  # Main application code
-├── knowledge_guidelines.md  # System prompts for LLMs
-├── sessions/  # Stored session metadata
-└── chroma_sessions/  # Vector database storage
+```bash
+# Format code
+black codeanalyzer tests
+
+# Lint code
+ruff check codeanalyzer tests
+
+# Type check
+mypy codeanalyzer
 ```
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run tests to ensure functionality
-5. Submit a pull request
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for version history and changes.
 
 ## License
 
-[MIT License](LICENSE)
+MIT License - see LICENSE file for details.
+
+## Troubleshooting
+
+### ModuleNotFoundError
+
+If you encounter import errors:
+```bash
+pip install -r requirements.txt
+```
+
+### OPENAI_API_KEY not set
+
+Export your API key:
+```bash
+export OPENAI_API_KEY='your-key'
+```
+
+### Permission Errors
+
+Ensure you have read/write permissions in the working directory for session storage and logs.
+
+## Support
+
+- Report bugs: [GitHub Issues](https://github.com/yourusername/codeanalyzer/issues)
+- Documentation: [README.md](README.md)
+- Contributing: [CONTRIBUTING.md](CONTRIBUTING.md)

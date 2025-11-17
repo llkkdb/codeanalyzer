@@ -1,16 +1,10 @@
 import pytest
-import sys
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-# Get the path to the root of the project
-project_root = Path(__file__).parent.parent.parent.absolute()
-
-# Add it to the Python path
-if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
-
-from code_understanding import CodeUnderstandingSystem, SessionManager, CodeSession
+from codeanalyzer import CodeUnderstandingSystem
+from codeanalyzer.storage.manager import SessionManager
+from codeanalyzer.core.session import CodeSession
 
 @pytest.fixture
 def mock_embeddings():
@@ -18,7 +12,7 @@ def mock_embeddings():
 
 def test_full_workflow(tmp_path, mock_embeddings):
     # Instead of mocking the LLM, patch the specific method
-    with patch('code_understanding.CodeUnderstandingSystem.generate_search_commands') as mock_generate:
+    with patch('codeanalyzer.llm.system.CodeUnderstandingSystem.generate_search_commands') as mock_generate:
         # Set return value for the patched method
         mock_generate.return_value = ["grep -rHn TODO", "find . -name *.py -maxdepth 2"]
         
@@ -34,7 +28,7 @@ def test_full_workflow(tmp_path, mock_embeddings):
         assert "grep" in commands[0]
     
         # Test command execution and file processing
-        with patch('code_understanding.SafeCommandExecutor.execute') as mock_execute:
+        with patch('codeanalyzer.core.executor.SafeCommandExecutor.execute') as mock_execute:
             mock_execute.return_value = [Path("dummy_file.py")]
             found_files = system.execute_search(commands)
             assert len(found_files) > 0
@@ -68,7 +62,7 @@ def test_file_processing(tmp_path):
     system = CodeUnderstandingSystem()
     system.session_manager.create_session()  # Ensure active session exists
     
-    with patch("code_understanding.Chroma.from_documents") as mock_store:
+    with patch("codeanalyzer.core.session.Chroma.from_documents") as mock_store:
         # Test file addition and chunking
         test_file = tmp_path / "test.txt"
         test_file.write_text("a" * 2500)  # 2500 character file
