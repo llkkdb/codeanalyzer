@@ -199,9 +199,14 @@ class CodeUnderstandingSystem:
             await self.session_manager.persist_session_async(session)
 
             return response.content
-        except Exception as e:
+        except (CommandExecutionError, FileProcessingError, SessionNotFoundError, ConfigurationError) as e:
             error_msg = f"Error processing query: {e}"
             logger.error(error_msg)
+            raise LLMError(error_msg)
+        except Exception as e:
+            # Catch unexpected errors but not KeyboardInterrupt/SystemExit
+            error_msg = f"Unexpected error processing query: {e}"
+            logger.error(error_msg, exc_info=True)
             raise LLMError(error_msg)
 
     def ask(self, query: str, k: int = 5) -> str:

@@ -38,7 +38,9 @@ def ask(system: CodeUnderstandingSystem, query: str, k: int):
     """Ask a question in current session with progress feedback"""
     try:
         if not system.session_manager.active_session:
-            click.echo("No active session! Create one with 'session new'")
+            click.echo("Error: No active session!", err=True)
+            click.echo("Create a new session with:", err=True)
+            click.echo("  codeanalyzer session new --name my-session", err=True)
             return
 
         with click.progressbar(length=4, label="Processing query") as bar:
@@ -105,7 +107,9 @@ def switch_session(system: CodeUnderstandingSystem, session_id: str):
                 system.session_manager.active_session = sess
                 click.echo(f"Loaded and switched to session: {session_id}")
             else:
-                click.echo(f"Session {session_id} not found!")
+                click.echo(f"Error: Session '{session_id}' not found!", err=True)
+                click.echo("Run 'codeanalyzer session list' to see available sessions", err=True)
+                click.echo("Or create a new session with 'codeanalyzer session new --name {}'".format(session_id), err=True)
     except Exception as e:
         click.echo(f"Error switching session: {e}", err=True)
 
@@ -198,7 +202,7 @@ def clean_sessions(system: CodeUnderstandingSystem, force: bool):
 @click.option("--add-exclude", help="Add directory or extension to exclusion list")
 @click.option("--remove-exclude", help="Remove directory or extension from exclusion list")
 @click.option("--list-exclude", is_flag=True, help="List excluded directories and extensions")
-def configure(max_file_size, add_exclude, remove_exclude, list_exclude):
+def configure(max_file_size: int, add_exclude: str, remove_exclude: str, list_exclude: bool) -> None:
     """Configure system parameters"""
     try:
         cfg = Config()

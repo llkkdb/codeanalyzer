@@ -1,7 +1,5 @@
 import pytest
-import sys
-sys.path.append('.')
-from code_understanding import SafeCommandExecutor
+from codeanalyzer.core.executor import SafeCommandExecutor
 
 @pytest.fixture
 def executor():

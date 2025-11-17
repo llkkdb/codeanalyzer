@@ -73,11 +73,11 @@ class Config:
         except IOError as e:
             raise ConfigurationError(f"Failed to save config to {self.config_path}: {e}")
 
-    def get(self, key: str, default=None):
+    def get(self, key: str, default: Any = None) -> Any:
         """Get configuration value."""
         return self._config.get(key, default)
 
-    def set(self, key: str, value: Any):
+    def set(self, key: str, value: Any) -> None:
         """Set configuration value."""
         self._config[key] = value
 

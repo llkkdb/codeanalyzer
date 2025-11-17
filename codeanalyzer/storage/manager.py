@@ -219,8 +219,11 @@ class SessionManager:
             for d, _ in session_dirs_with_time[:self.max_sessions]:
                 try:
                     self.load_session(d.name)
-                except Exception as e:
+                except (SessionNotFoundError, FileProcessingError, ConfigurationError) as e:
                     logger.warning(f"Failed to auto-load session {d.name}: {e}")
+                except Exception as e:
+                    # Log unexpected errors during auto-load
+                    logger.warning(f"Unexpected error auto-loading session {d.name}: {e}")
 
             # Set active session to most recently used
             if session_dirs_with_time and self.sessions:
@@ -229,8 +232,11 @@ class SessionManager:
                     self.active_session = self.sessions[most_recent]
                     logger.info(f"Active session set to: {most_recent}")
 
-        except Exception as e:
+        except (OSError, IOError, SessionNotFoundError) as e:
             logger.error(f"Error auto-loading sessions: {e}")
+        except Exception as e:
+            # Log unexpected errors
+            logger.error(f"Unexpected error auto-loading sessions: {e}", exc_info=True)
 
     def _cleanup_inactive_sessions(self):
         """Periodically clean up inactive sessions."""
@@ -254,8 +260,11 @@ class SessionManager:
                         logger.info(f"Cleaning up inactive session: {session_id}")
                         del self.sessions[session_id]
 
+            except (OSError, IOError) as e:
+                logger.error(f"Error persisting sessions during cleanup: {e}")
             except Exception as e:
-                logger.error(f"Error in cleanup thread: {e}")
+                # Catch unexpected errors to prevent cleanup thread from dying
+                logger.error(f"Unexpected error in cleanup thread: {e}", exc_info=True)
 
     def _cleanup_oldest_session(self):
         """Remove oldest session when max sessions is reached."""

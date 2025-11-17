@@ -54,6 +54,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- GitHub Actions CI/CD workflows for automated testing and quality checks
+- Docker support with Dockerfile and docker-compose.yml
+- Security scanning with bandit and safety in CI pipeline
+- Better error messages with helpful hints and suggestions
+
+### Changed
+- Updated all test imports to use new modular package structure
+- Removed legacy `code_understanding.py` monolithic file
+- Improved exception handling to be more specific (avoid broad catches)
+- Added missing type hints to `config.py` and `cli.py`
+- Updated pyproject.toml with bandit and safety dev dependencies
+
+### Fixed
+- Fixed overly broad exception handlers in:
+  - `llm/system.py` - Now catches specific exceptions before falling back to generic
+  - `storage/manager.py` - Better exception specificity in auto-load and cleanup
+  - `cli.py` - Improved error reporting with actionable hints
+
+### Security
+- More granular exception handling to prevent catching KeyboardInterrupt/SystemExit
+- Better error logging with stack traces for unexpected errors
+- Added security scanning to CI/CD pipeline
+
+### Developer Experience
+- GitHub Actions workflows for tests, linting, type checking, and security
+- Dockerfile for containerized deployment
+- Docker Compose for easy local development
+- Pre-commit workflow for automated code quality checks
+- Coverage reporting with threshold checks (60% minimum)
+
 ### Planned
 - Improved test coverage (target: >80%)
 - Performance optimizations
