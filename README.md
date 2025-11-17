@@ -44,6 +44,56 @@ An intelligent code understanding system for exploring and analyzing codebases u
    pip install -e ".[dev]"
    ```
 
+### Docker Installation
+
+For containerized deployment, use the provided Docker setup:
+
+1. **Using Docker Compose (Recommended)**:
+   ```bash
+   # Build and run
+   docker-compose up -d
+
+   # Run a command
+   docker-compose run codeanalyzer ask "How does this work?"
+
+   # Stop
+   docker-compose down
+   ```
+
+2. **Using Docker directly**:
+   ```bash
+   # Build the image
+   docker build -t codeanalyzer:latest .
+
+   # Run with your code mounted
+   docker run -it --rm \
+     -e OPENAI_API_KEY='your-api-key' \
+     -v $(pwd):/code \
+     -v codeanalyzer-sessions:/app/sessions \
+     -v codeanalyzer-logs:/app/logs \
+     codeanalyzer:latest ask "What does this code do?"
+   ```
+
+3. **Interactive Docker session**:
+   ```bash
+   # Start an interactive session
+   docker run -it --rm \
+     -e OPENAI_API_KEY='your-api-key' \
+     -v $(pwd):/code \
+     -v codeanalyzer-sessions:/app/sessions \
+     codeanalyzer:latest /bin/bash
+
+   # Inside container, use codeanalyzer normally
+   codeanalyzer session new --name my-session
+   codeanalyzer ask "Explain this codebase"
+   ```
+
+**Docker Volumes**:
+- `/code` - Your code to analyze (mount your project here)
+- `/app/sessions` - Persistent session data
+- `/app/logs` - Application logs
+- `/app/config` - Configuration files
+
 ## Configuration
 
 1. Set up your OpenAI API key:
