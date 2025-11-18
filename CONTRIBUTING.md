@@ -1,109 +1,130 @@
 # Contributing to CodeAnalyzer
 
-Thank you for your interest in contributing to CodeAnalyzer! This document provides guidelines for contributing to the project.
+Thank you for your interest in contributing to CodeAnalyzer! This guide will help you get started.
 
-## Development Setup
+## Table of Contents
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/yourusername/codeanalyzer.git
-   cd codeanalyzer
-   ```
+- [Getting Started](#getting-started)
+- [Development Setup](#development-setup)
+- [Code Style](#code-style)
+- [Testing](#testing)
+- [Submitting Changes](#submitting-changes)
 
-2. **Create a virtual environment:**
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-   ```
+## Getting Started
 
-3. **Install development dependencies:**
-   ```bash
-   pip install -e ".[dev]"
-   ```
+### Prerequisites
 
-4. **Install pre-commit hooks:**
-   ```bash
-   pre-commit install
-   ```
+- Python 3.11 or higher
+- Git
+- OpenAI API key (for testing with real API calls)
+
+### Development Setup
+
+```bash
+# Clone repository
+git clone https://github.com/yourusername/codeanalyzer.git
+cd codeanalyzer
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate
+
+# Install development dependencies
+make dev-setup
+# Or: pip install -e ".[dev]"
+
+# Set up environment
+export OPENAI_API_KEY="your-api-key"
+
+# Verify installation
+make test
+```
 
 ## Code Style
 
-We use several tools to maintain code quality:
+CodeAnalyzer follows PEP 8 with Black formatting (line length: 100).
 
-- **Black** for code formatting (line length: 100)
-- **Ruff** for linting
-- **MyPy** for type checking
-- **Pytest** for testing
+### Running Style Checks
 
-Run formatters and linters:
 ```bash
-black codeanalyzer tests
-ruff check codeanalyzer tests
-mypy codeanalyzer
+make lint        # Check style
+make lint-fix    # Auto-fix issues
+make format      # Format code
 ```
 
 ## Testing
 
-Run the test suite:
-```bash
-pytest
+### Test Structure
+
+```
+tests/
+├── unit/              # Fast, isolated tests
+├── integration/       # Component interaction tests  
+└── performance/       # Performance benchmarks
 ```
 
-Run tests with coverage:
+### Running Tests
+
 ```bash
-pytest --cov=codeanalyzer --cov-report=html
+make test              # All tests
+make test-unit         # Unit tests only
+make test-integration  # Integration tests
+make test-coverage     # With coverage report
+make benchmark         # Performance benchmarks
 ```
 
-## Pull Request Process
+### Test Guidelines
 
-1. **Create a feature branch:**
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
+1. Use fixtures from `tests/conftest.py`
+2. Mark tests appropriately (`@pytest.mark.unit`, `@pytest.mark.integration`)
+3. Mock external dependencies
+4. Write descriptive test names
+5. Keep tests focused
 
-2. **Make your changes:**
-   - Write clean, documented code
-   - Add tests for new functionality
-   - Update documentation as needed
+## Submitting Changes
 
-3. **Run tests and linters:**
-   ```bash
-   pytest
-   black codeanalyzer tests
-   ruff check codeanalyzer tests
-   mypy codeanalyzer
-   ```
+### Commit Messages
 
-4. **Commit your changes:**
-   ```bash
-   git add .
-   git commit -m "Description of your changes"
-   ```
+Follow conventional commit format:
 
-5. **Push and create a pull request:**
-   ```bash
-   git push origin feature/your-feature-name
-   ```
+```
+<type>(<scope>): <subject>
 
-## Code Review
+<body>
+```
 
-All submissions require review. We use GitHub pull requests for this purpose.
+**Types:** feat, fix, docs, test, refactor, perf, chore
 
-## Reporting Bugs
+**Example:**
+```
+feat(session): Add session export functionality
 
-Please use GitHub Issues to report bugs. Include:
-- A clear description of the bug
-- Steps to reproduce
-- Expected vs. actual behavior
-- Your environment (OS, Python version, etc.)
+Add ability to export session data to JSON format.
 
-## Feature Requests
+Closes #123
+```
 
-We welcome feature requests! Please use GitHub Issues and include:
-- Clear description of the feature
-- Use case and rationale
-- Proposed implementation (if you have ideas)
+### Pull Request Process
 
-## License
+1. Create feature branch
+2. Make changes with tests
+3. Run `make ci` locally
+4. Push and create PR
+5. Address review feedback
 
-By contributing, you agree that your contributions will be licensed under the same license as the project (MIT License).
+### PR Checklist
+
+- [ ] Tests pass
+- [ ] Code formatted
+- [ ] Linting passes
+- [ ] Documentation updated
+- [ ] CHANGELOG updated
+- [ ] No merge conflicts
+
+## Getting Help
+
+- Issues: GitHub Issues
+- Questions: GitHub Discussions
+- Docs: `docs/` directory
+
+Thank you for contributing! 🎉
