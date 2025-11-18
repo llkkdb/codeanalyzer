@@ -66,15 +66,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Exception tests (30+ cases) - Custom exception hierarchy and error handling
   - Integration workflow tests (15+ cases) - End-to-end workflow testing
 - **Test infrastructure**:
-  - Pytest fixtures system (200+ lines) - Reusable test setup components
+  - Pytest fixtures system (260+ lines) - Reusable test setup components
   - Mock fixtures for LLM, embeddings, vector stores, and sessions
   - Sample data fixtures for files, code structure, and command outputs
-  - Custom pytest markers (integration, unit, slow, requires_api)
+  - Custom pytest markers (integration, unit, slow, requires_api, benchmark)
+- **Performance benchmarks** (tests/performance/):
+  - 9 comprehensive benchmarks for key operations (350+ lines)
+  - File processing, session management, command parsing benchmarks
+  - Performance thresholds to prevent regressions
+  - Detailed benchmark guide with CI/CD integration examples
 - **Comprehensive documentation**:
   - Architecture documentation (600+ lines) with ASCII diagrams and component details
   - Examples guide (500+ lines) with 6 real-world use cases
   - Troubleshooting guide (400+ lines) with common issues and solutions
   - Deployment guide (640+ lines) covering all deployment scenarios
+  - **API reference documentation** (300+ lines) with complete module documentation
   - Docker usage documentation in README
 
 ### Changed
@@ -112,6 +118,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Examples Guide** (`docs/examples.md`): Getting started, 6 real-world use cases (onboarding, security audit, debugging, API docs, migration, code review)
 - **Troubleshooting Guide** (`docs/troubleshooting.md`): Installation issues, configuration problems, error messages, Docker issues, quick fixes
 - **Deployment Guide** (`docs/deployment.md`): Local development, Docker deployment (single, compose, production), cloud platforms (AWS, GCP, Azure, Kubernetes), production considerations (security, monitoring, backup), CI/CD integration, cost optimization
+- **API Reference** (`docs/api/README.md`): Complete API documentation for all modules, CLI commands, environment variables, type hints, best practices, usage examples
+- **Performance Benchmarks** (`tests/performance/README.md`): Benchmark guide, performance thresholds, profiling tips, CI/CD integration
 
 ### Planned
 - Performance optimizations and caching
